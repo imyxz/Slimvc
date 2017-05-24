@@ -7,14 +7,13 @@
  */
 class Slimvc{
     public $processor;
-    public function Slimvc()
+    public function __construct()
     {
         $this->processor=new SlimvcProcessor();
     }
     static public function ErrorNotice($info)
     {
         echo $info;
-        var_dump($_SERVER);
         exit();
     }
 }
