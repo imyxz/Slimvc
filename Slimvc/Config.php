@@ -7,3 +7,11 @@
  */
 $Config=array();
 $Config['DebugSql']=false;
+$Config['Session']=true;
+$Config['CharSet'] = 'utf-8';
+
+
+$Config['Host'] = 'localhost';
+$Config['User'] = 'root';
+$Config['Password'] = '';
+$Config['DBname'] = '';

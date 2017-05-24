@@ -6,41 +6,99 @@
  * Github: https://github.com/imyxz/
  */
 class Slimvc{
+    public $processor;
+    public function Slimvc()
+    {
+        $this->processor=new SlimvcProcessor();
+    }
     static public function ErrorNotice($info)
     {
         echo $info;
+        var_dump($_SERVER);
         exit();
     }
 }
-class SlimvcController{
-    public $DB;
-    private $models=array();
-    public function SlimycController()
+class SlimvcProcessor{
+    public $controllerName;
+    public $controllerFilePath;
+    public $actionName;
+    public $controller;
+    public function initProcess()
     {
-        $this->DB=new SlimvcDB();
+        global $Config;
+        $parameter=explode('/',trim($_SERVER['REQUEST_URI'],' /'));
+        if(count($parameter)<2)
+        {
+            $this->controllerName="indexs";
+            $this->actionName='IndexAction';
+        }
+        else
+        {
+            $this->controllerName=$parameter[0];
+            $this->actionName=$parameter[1];
+            for($i=3;$i<count($parameter);$i+=2)//填充GET参数
+            {
+                $_GET[$parameter[$i-1]]=$parameter[$i];
+            }
+        }
+        $this->controllerFilePath=_Controller . $this->controllerName . '.php';
+        if(dirname($this->controllerFilePath) . _DS_ !=_Controller)
+            Slimvc::ErrorNotice("Controller Not Exist!");//防止include不该include的文件
+        if($Config['Session'])
+            session_start();
+    }
+    public function startController()
+    {
+        if(!is_file($this->controllerFilePath))
+            Slimvc::ErrorNotice("Controller Not Exist!");
+        include_once($this->controllerFilePath);
+        if(!class_exists($this->controllerName))
+            Slimvc::ErrorNotice("Controller Class not Exist!");
+        $allMethods=get_class_methods($this->controllerName);
+        if(!in_array($this->actionName,$allMethods))
+            Slimvc::ErrorNotice("Controller action not Exist!");
+        $this->controller=new $this->controllerName;
+        $this->controller->{$this->actionName}();
+    }
+}
+class SlimvcController
+{
+    public $DB;
+    private $models = array();
+
+    public function __construct()
+    {
+        $this->DB = new SlimvcDB();
         global $Config;
         $this->DB->connect($Config);
 
     }
-    public function __set($name,$value)
+
+    public function __set($name, $value)
     {
     }
-    public function model($filename,$className=NULL)
+
+    public function model($filename, $className = NULL)
     {
-        $target=_Model . _DS_ . $filename . '.php';
-        if($className==NULL)
-            $className=$filename;
-        if(!file_exists($target))
+        $target = _Model . _DS_ . $filename . '.php';
+        if ($className == NULL)
+            $className = $filename;
+        if (!is_file($target))
             Slimvc::ErrorNotice("Model File $filename not Exist!");
         include_once($target);
-        if(!class_exists($className))
+        if (!class_exists($className))
             Slimvc::ErrorNotice("Model Class $className not Exist!");
-        if(!$this->models[$className])
-        {
-            $this->models[$className]=new $className;
-            $this->models[$className]->Mysqli=$this->DB->mysqli;
+        if (empty($this->models[$className])) {
+            $this->models[$className] = new $className;
+            $this->models[$className]->Mysqli = $this->DB->mysqli;
         }
         return $this->models[$className];
+    }
+
+    public function outputJson($arr)
+    {
+        header("Content-type: application/json");
+        echo json_encode($arr);
     }
 }
 class SlimvcModel{
@@ -54,7 +112,6 @@ class SlimvcModel{
     public function query($sql)
     {
         global $Config;
-
 
         try{
             if(!$this->Mysqli)
@@ -111,7 +168,7 @@ class SlimvcModel{
     }
     protected function _log($info,$filename,$line)
     {
-        var_dump($info);
+        echo "$filename : $line : $info \n";
     }
     private function refArr($arr)
     {
@@ -144,6 +201,8 @@ class SlimvcDB{
     public function connect($Config)
     {
         $this->mysqli=mysqli_connect($Config['Host'], $Config['User'], $Config['Password'],$Config['DBname']);
+        if(!$this->mysqli)
+            Slimvc::ErrorNotice("Database Connection Fail!");
         $CharSet = str_replace('-', '', $Config['CharSet']);
         mysqli_query($this->mysqli, "SET NAMES '$CharSet'");
         return $this->mysqli;
