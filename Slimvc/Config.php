@@ -14,4 +14,4 @@ $Config['CharSet'] = 'utf-8';
 $Config['Host'] = 'localhost';
 $Config['User'] = 'root';
 $Config['Password'] = '';
-$Config['DBname'] = '';
+$Config['DBname'] = 'viple';

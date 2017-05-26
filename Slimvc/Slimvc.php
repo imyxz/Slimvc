@@ -10,6 +10,9 @@ class Slimvc{
     public function __construct()
     {
         $this->processor=new SlimvcProcessor();
+        SlimvcController::$DB = new SlimvcDB();
+        global $Config;
+        SlimvcController::$DB->connect($Config);
     }
     static public function ErrorNotice($info)
     {
@@ -62,19 +65,19 @@ class SlimvcProcessor{
 }
 class SlimvcController
 {
-    public $DB;
-    private $models = array();
+    public static $DB;
+    protected static $models = array();
+    protected static $helpers=array();
 
     public function __construct()
     {
-        $this->DB = new SlimvcDB();
-        global $Config;
-        $this->DB->connect($Config);
+
 
     }
 
     public function __set($name, $value)
     {
+        $this->$name=$value;
     }
 
     public function model($filename, $className = NULL)
@@ -87,18 +90,40 @@ class SlimvcController
         include_once($target);
         if (!class_exists($className))
             Slimvc::ErrorNotice("Model Class $className not Exist!");
-        if (empty($this->models[$className])) {
-            $this->models[$className] = new $className;
-            $this->models[$className]->Mysqli = $this->DB->mysqli;
+        if (empty(self::$models[$className])) {
+            self::$models[$className] = new $className;
+            self::$models[$className]->Mysqli = self::$DB->mysqli;
         }
-        return $this->models[$className];
+        return self::$models[$className];
     }
-
+    public function helper($filename,$className=NULL)
+    {
+        $target = _Helper . _DS_ . $filename . '.php';
+        if ($className == NULL)
+            $className = $filename;
+        if (!is_file($target))
+            Slimvc::ErrorNotice("Helper File $filename not Exist!");
+        include_once($target);
+        if (!class_exists($className))
+            Slimvc::ErrorNotice("Helper Class $className not Exist!");
+        if (empty(self::$helpers[$className])) {
+            self::$helpers[$className] = new $className;
+            self::$helpers[$className]->Mysqli = self::$DB->mysqli;
+        }
+        return self::$helpers[$className];
+    }
     public function outputJson($arr)
     {
         header("Content-type: application/json");
         echo json_encode($arr);
     }
+    public function getRequestJson()
+    {
+        return json_decode(file_get_contents("php://input"),true);
+    }
+}
+class SlimvcHelper extends SlimvcController{
+
 }
 class SlimvcModel{
     public $Mysqli;
