@@ -7,5 +7,5 @@
  */
 class helper_test extends SlimvcHelper
 {
-    
+
 }

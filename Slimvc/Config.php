@@ -10,6 +10,7 @@ $Config['DebugSql']=false;
 $Config['Session']=true;
 $Config['CharSet'] = 'utf-8';
 
+$Config['XSS']=false;
 
 $Config['Host'] = 'localhost';
 $Config['User'] = 'root';

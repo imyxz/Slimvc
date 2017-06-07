@@ -19,6 +19,19 @@ class Slimvc{
         echo $info;
         exit();
     }
+    static public function Filter($arr,$func)
+    {
+        if(!is_array($arr)) return $func($arr);
+        $ret=array();
+        foreach($arr as $key=>&$one)
+        {
+            if(is_array($one))
+                $ret[$key]=Slimvc::Filter($one,$func);
+            else
+                $ret[$key]=$func($one);
+        }
+        return $ret;
+    }
 }
 class SlimvcProcessor{
     public $controllerName;
@@ -68,7 +81,7 @@ class SlimvcController
     public static $DB;
     protected static $models = array();
     protected static $helpers=array();
-
+    protected $view_var=array();
     public function __construct()
     {
 
@@ -77,9 +90,19 @@ class SlimvcController
 
     public function __set($name, $value)
     {
-        $this->$name=$value;
+        $this->view_var[$name]=$value;
     }
+    public function view($filename)
+    {
+       global $Config;
+        $viewer= new SlimvcViewer();
+        if($Config['XSS'])
+            $viewer->vars=Slimvc::Filter($this->view_var,"htmlspecialchars");
+        else
+            $viewer->vars=$this->view_var;
+        $viewer->view($filename);
 
+    }
     public function model($filename, $className = NULL)
     {
         $target = _Model . _DS_ . $filename . '.php';
@@ -218,6 +241,21 @@ class SlimvcModelResult{
         while ($row = $this->result->fetch_assoc())
             $return[] = $row;
         return $return;
+    }
+    public function sum()
+    {
+        return $this->result->num_rows;
+    }
+}
+class SlimvcViewer{
+    public $vars=array();
+    function view($filename)
+    {
+        $target = _View . _DS_ . $filename . '.php';
+        if (!is_file($target))
+            Slimvc::ErrorNotice("View File $filename not Exist!");
+        @extract($this->vars);
+        include($target);
     }
 }
 class SlimvcDB{
