@@ -38,6 +38,7 @@ class SlimvcProcessor{
     public $controllerFilePath;
     public $actionName;
     public $controller;
+    public $cliArg;
     public function initProcess()
     {
         global $Config;
@@ -62,6 +63,30 @@ class SlimvcProcessor{
         if($Config['Session'])
             session_start();
     }
+    public function initCliProcess()
+    {
+        global $Config;
+        global $argv;
+        $cliArg=array();
+        if(count($argv)<3)
+        {
+            $this->controllerName="indexs";
+            $this->actionName='IndexAction';
+        }
+        else
+        {
+            $this->controllerName=$argv[1];
+            $this->actionName=$argv[2];
+            for($i=4;$i<count($argv);$i+=2)//填充cli参数
+            {
+                $cliArg[$argv[$i-1]]=$argv[$i];
+            }
+        }
+        SlimvcControllerCli::$cliArg=$cliArg;
+        $this->controllerFilePath=_Controller . $this->controllerName . '.php';
+        if(dirname($this->controllerFilePath) . _DS_ !=_Controller)
+            Slimvc::ErrorNotice("Controller Not Exist!");//防止include不该include的文件
+    }
     public function startController()
     {
         if(!is_file($this->controllerFilePath))
@@ -76,33 +101,18 @@ class SlimvcProcessor{
         $this->controller->{$this->actionName}();
     }
 }
-class SlimvcController
+class SlimvcControllerBasic
 {
     public static $DB;
     protected static $models = array();
     protected static $helpers=array();
-    protected $view_var=array();
     public function __construct()
     {
 
 
     }
 
-    public function __set($name, $value)
-    {
-        $this->view_var[$name]=$value;
-    }
-    public function view($filename)
-    {
-       global $Config;
-        $viewer= new SlimvcViewer();
-        if($Config['XSS'])
-            $viewer->vars=Slimvc::Filter($this->view_var,"htmlspecialchars");
-        else
-            $viewer->vars=$this->view_var;
-        $viewer->view($filename);
 
-    }
     public function model($filename, $className = NULL)
     {
         $target = _Model . _DS_ . $filename . '.php';
@@ -135,6 +145,26 @@ class SlimvcController
         }
         return self::$helpers[$className];
     }
+
+}
+class SlimvcController extends SlimvcControllerBasic
+{
+    protected $view_var=array();
+    public function __set($name, $value)
+    {
+        $this->view_var[$name]=$value;
+    }
+    public function view($filename)
+    {
+        global $Config;
+        $viewer= new SlimvcViewer();
+        if($Config['XSS'])
+            $viewer->vars=Slimvc::Filter($this->view_var,"htmlspecialchars");
+        else
+            $viewer->vars=$this->view_var;
+        $viewer->view($filename);
+
+    }
     public function outputJson($arr)
     {
         header("Content-type: application/json");
@@ -144,8 +174,14 @@ class SlimvcController
     {
         return json_decode(file_get_contents("php://input"),true);
     }
+
 }
-class SlimvcHelper extends SlimvcController{
+class SlimvcControllerCli extends SlimvcControllerBasic
+{
+    public static $cliArg;
+
+}
+class SlimvcHelper extends SlimvcControllerBasic{
 
 }
 class SlimvcModel{
