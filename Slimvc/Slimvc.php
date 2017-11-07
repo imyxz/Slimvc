@@ -145,6 +145,18 @@ class SlimvcControllerBasic
         }
         return self::$helpers[$className];
     }
+    public function newClass($filename,$className=NULL)
+    {
+        $target = _Class . _DS_ . $filename . '.php';
+        if ($className == NULL)
+            $className = $filename;
+        if (!is_file($target))
+            Slimvc::ErrorNotice("Class File $filename not Exist!");
+        include_once($target);
+        if (!class_exists($className))
+            Slimvc::ErrorNotice("Class Class $className not Exist!");
+        return new $className;
+    }
 
 }
 class SlimvcController extends SlimvcControllerBasic
