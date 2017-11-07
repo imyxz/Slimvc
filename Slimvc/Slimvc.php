@@ -14,8 +14,9 @@ class Slimvc{
         global $Config;
         SlimvcController::$DB->connect($Config);
     }
-    static public function ErrorNotice($info)
+    static public function ErrorNotice($info,$code=500)
     {
+        http_response_code($code);
         echo $info;
         exit();
     }
@@ -39,14 +40,23 @@ class SlimvcProcessor{
     public $actionName;
     public $controller;
     public $cliArg;
+    public $route;
     public function initProcess()
     {
         global $Config;
-        $parameter=explode('/',trim($_SERVER['REQUEST_URI'],' /'));
-        if(count($parameter)<2)
+        $route=$_SERVER['REQUEST_URI'];
+        if(substr($route,0,strlen(_PATH_PREFIX))==_PATH_PREFIX)
+            $route=substr($route,strlen(_PATH_PREFIX),strlen($route)-strlen(_PATH_PREFIX));
+        $route=trim($route,' /');
+        $parameter=explode('/',$route);
+        if(count($parameter)==0)
         {
             $this->controllerName="indexs";
             $this->actionName='IndexAction';
+        }
+        else if(count($parameter)==2)
+        {
+            Slimvc::ErrorNotice("File not exist!",404);
         }
         else
         {

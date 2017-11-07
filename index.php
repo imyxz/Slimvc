@@ -13,6 +13,7 @@ define('_Model',_Root . 'Model' . _DS_);
 define('_View',_Root . 'View' . _DS_);
 define('_Class',_Root . 'Class' . _DS_);
 define('_Helper',_Root . 'Helper' . _DS_);
+define('_PATH_PREFIX',"/");
 define('_HTTP','');
 include(_Slimvc . 'Config.php');
 include(_Slimvc . 'Slimvc.php');
