@@ -54,7 +54,7 @@ class SlimvcProcessor{
             $this->controllerName="indexs";
             $this->actionName='IndexAction';
         }
-        else if(count($parameter)==2)
+        else if(count($parameter)<2)
         {
             Slimvc::ErrorNotice("File not exist!",404);
         }
